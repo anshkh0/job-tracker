@@ -1,4 +1,5 @@
-const GEMINI_API_KEY = 'AIzaSyAF9ufQugYqIFsSPGx1O_cHLyZ62Xcg764'
+const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_KEY
+
 
 export async function analyzeJob(jobDescription, resume) {
   const response = await fetch(
