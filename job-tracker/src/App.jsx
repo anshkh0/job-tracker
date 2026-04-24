@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from './supabase'
 import { analyzeJob } from './gemini'
+import AuthPage from './Auth'
 
 const statusColors = {
   Applied: 'bg-blue-100 text-blue-700',
@@ -19,9 +20,18 @@ function App() {
   const [resume, setResume] = useState('')
   const [analysis, setAnalysis] = useState('')
   const [analyzing, setAnalyzing] = useState(false)
+  const [session, setSession] = useState(null)
 
-  useEffect(() => {
-    fetchJobs()
+ useEffect(() => {
+  supabase.auth.getSession().then(({ data: { session } }) => {
+    setSession(session)
+    if (session) fetchJobs()
+  })
+
+  supabase.auth.onAuthStateChange((_event, session) => {
+    setSession(session)
+    if (session) fetchJobs()
+  })
   }, [])
 
   async function fetchJobs() {
@@ -33,7 +43,10 @@ function App() {
 
   async function handleAdd() {
     if (!form.company || !form.role || !form.date) return
-    const { data, error } = await supabase.from('Applications').insert([form]).select()
+    const { data, error } = await supabase
+      .from('Applications')
+      .insert([{ ...form, user_id: session.user.id }])
+      .select()
     if (error) console.error(error)
     else setJobs([...data, ...jobs])
     setForm({ company: '', role: '', status: 'Applied', date: '' })
@@ -58,7 +71,7 @@ function App() {
     setAnalysis(result)
     setAnalyzing(false)
   }
-
+  if (!session) return <AuthPage />
   return (
     <div className="min-h-screen bg-gray-50">
       <nav className="bg-white border-b px-6 py-4 flex justify-between items-center">
@@ -68,6 +81,12 @@ function App() {
           className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium"
         >
           + Add Application
+        </button>
+        <button
+          onClick={() => supabase.auth.signOut()}
+          className="border px-4 py-2 rounded-lg text-sm text-gray-600"
+          >
+              Sign Out
         </button>
       </nav>
 
