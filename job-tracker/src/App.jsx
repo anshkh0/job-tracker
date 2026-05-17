@@ -207,14 +207,14 @@ function App() {
                   />
                 </div>
                 <div>
-                  <label className="text-xs text-gray-500 mb-1 block">Paste Your Resume</label>
-                  <textarea
-                    className="border rounded-lg px-3 py-2 text-sm w-full h-32"
-                    placeholder="Paste your resume text here..."
-                    value={resume}
-                    onChange={e => setResume(e.target.value)}
-                  />
-                </div>
+                  <label className="text-xs text-gray-500 mb-1 block">Upload Your Resume (PDF)</label>
+                    <input
+                      type="file"
+                      accept=".pdf"
+                      className="border rounded-lg px-3 py-2 text-sm w-full"
+                      onChange={e => setResume(e.target.files[0])}
+                    />
+              </div>
               </div>
               <button
                 onClick={handleAnalyze}

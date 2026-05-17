@@ -1,11 +1,13 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
 import requests
 import os
 from dotenv import load_dotenv
+import PyPDF2
+import io
 
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '.env'))
+
 print("API KEY:", os.getenv("GEMINI_API_KEY"))
 
 app = FastAPI()
@@ -18,12 +20,21 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-class AnalyzeRequest(BaseModel):
-    jobDescription: str
-    resume: str
+def extract_text_from_pdf(file_bytes):
+    reader = PyPDF2.PdfReader(io.BytesIO(file_bytes))
+    text = ""
+    for page in reader.pages:
+        text += page.extract_text()
+    return text
 
 @app.post("/analyze")
-def analyze(req: AnalyzeRequest):
+async def analyze(
+    jobDescription: str = Form(...),
+    resume: UploadFile = File(...)
+):
+    pdf_bytes = await resume.read()
+    resume_text = extract_text_from_pdf(pdf_bytes)
+    
     api_key = os.getenv("GEMINI_API_KEY")
     response = requests.post(
         f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}",
@@ -38,10 +49,10 @@ def analyze(req: AnalyzeRequest):
 4. One sentence of advice
 
 Job Description:
-{req.jobDescription}
+{jobDescription}
 
 Resume:
-{req.resume}
+{resume_text}
 
 Reply in this exact format:
 Score: X/100
@@ -53,7 +64,7 @@ Advice: ..."""
         }
     )
     data = response.json()
-    print("Gemini response:", data)  # add this
+    print("Gemini response:", data)
     if "candidates" not in data:
         return {"result": f"Error: {data}"}
     return {"result": data["candidates"][0]["content"]["parts"][0]["text"]}

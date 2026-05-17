@@ -10,9 +10,8 @@ lerna-debug.log*
 /job-tracker/ap.env
 job-tracker\ap.env
 C:\projects\job-tracker\ap.env
-api.env
-./api.env
-.env
+
+backend/ .env
 
 node_modules
 dist
